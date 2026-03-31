@@ -185,6 +185,15 @@
         margin-right: 12px;
       }
 
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
       @media (max-width: 768px) {
         .shell {
           padding: 18px 10px 24px;
@@ -231,6 +240,17 @@
                 border-top-color: #e94560;
                 animation: spin 0.8s linear infinite;
                 box-shadow: 0 0 18px rgba(233, 69, 96, 0.5);
+                margin-bottom: 16px;
+              "
+            ></div>
+            <div
+              id="loadingMessage"
+              style="
+                max-width: 260px;
+                text-align: center;
+                font-size: 0.8rem;
+                color: var(--muted);
+                line-height: 1.4;
               "
             ></div>
           </div>
@@ -284,6 +304,7 @@
       const overlayEl = document.getElementById("overlay");
       const overlayText = overlayEl.querySelector(".overlay-content");
       const spinnerEl = document.getElementById("spinner");
+      const loadingMessage = document.getElementById("loadingMessage");
       const btnNew = document.getElementById("btnNew");
       const btnDijkstra = document.getElementById("btnDijkstra");
       const btnAStar = document.getElementById("btnAStar");
@@ -300,6 +321,7 @@
       let gameOver = false;
       let youWin = false;
       let loadingCount = 0;
+      let mazeRetryTimeout = null;
 
       function resetStats() {
         statLength.textContent = "-";
@@ -519,13 +541,46 @@
           exitCell = { x: 0, y: GRID_H - 1 };
 
           drawMaze();
+          return true;
         } catch (err) {
           console.error("Failed to generate maze:", err);
+          return false;
         }
       }
 
       function sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function generateMazeWithRetry(isInitial = false) {
+        if (mazeRetryTimeout) {
+          clearTimeout(mazeRetryTimeout);
+          mazeRetryTimeout = null;
+        }
+
+        if (isInitial) {
+          loadingMessage.textContent =
+            "Loading maze… server may take 30 seconds to wake up";
+        }
+
+        spinnerEl.style.display = "flex";
+
+        const ok = await generateMaze();
+        if (ok) {
+          loadingMessage.textContent = "";
+          if (loadingCount === 0) {
+            spinnerEl.style.display = "none";
+          }
+          return;
+        }
+
+        loadingMessage.textContent =
+          "Server waking up… click New Puzzle in a few seconds";
+        spinnerEl.style.display = "flex";
+
+        mazeRetryTimeout = setTimeout(() => {
+          generateMazeWithRetry(false);
+        }, 3000);
       }
 
       async function showPath(algorithm) {
@@ -600,13 +655,13 @@
         resizeCanvas();
         drawMaze();
       });
-      btnNew.addEventListener("click", generateMaze);
+      btnNew.addEventListener("click", () => generateMazeWithRetry(true));
       btnDijkstra.addEventListener("click", () => showPath("dijkstra"));
       btnAStar.addEventListener("click", () => showPath("astar"));
       btnClear.addEventListener("click", clearPathOverlay);
 
       resizeCanvas();
-      generateMaze();
+      generateMazeWithRetry(true);
     </script>
   </body>
 </html>
