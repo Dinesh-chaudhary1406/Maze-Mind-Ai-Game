@@ -3,7 +3,7 @@
 MazeMind AI is an interactive maze escape game and pathfinding visualizer built with a C++ backend (Crow HTTP framework) and a JavaScript HTML5 Canvas frontend. It demonstrates classic graph algorithms like Prim's maze generation, Dijkstra, A\*, and BFS-based enemy AI in real time through an engaging game interface.
 
 ## Live Demo
-(Deploy link here after deployment)
+https://maze-mind-ai-game.onrender.com/
 
 ## Features
 
