@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include "crow_all.h"
 #include "maze.h"
@@ -310,8 +311,15 @@ int main() {
         return resp;
     });
 
-    constexpr uint16_t port = 8080;
-    std::cout << "Server running on port 8080" << std::endl;
+    uint16_t port = 8080;
+
+    const char* port_env = std::getenv("PORT");
+    if(port_env) {
+        port = static_cast<uint16_t>(std::stoi(port_env));
+    }
+    
+    std::cout << "Server running on port " << port << std::endl;
+    
     app.port(port).multithreaded().run();
     return 0;
 }
