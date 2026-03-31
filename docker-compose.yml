@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  game_server:
+    build: .
+    container_name: dsa-game-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend:/app/frontend
+    restart: unless-stopped
+

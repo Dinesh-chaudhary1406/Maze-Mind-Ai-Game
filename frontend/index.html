@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MazeMind AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #1a1a2e;
+        --panel: #16213e;
+        --accent: #e94560;
+        --accent-soft: #0f3460;
+        --text: #eaeaea;
+        --muted: #9ba4b4;
+        --btn-bg: #0f3460;
+        --btn-hover: #1f4b8f;
+        --btn-border: #233554;
+        --win: #4caf50;
+        --lose: #f44336;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: radial-gradient(circle at top, #222831 0, var(--bg) 45%);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .shell {
+        width: 100%;
+        max-width: 900px;
+        padding: 24px 20px 32px;
+      }
+
+      .card {
+        background: linear-gradient(145deg, var(--panel), #0b1020);
+        border-radius: 18px;
+        padding: 20px 20px 24px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 16px;
+      }
+
+      .title {
+        font-size: 1.7rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .title span.accent {
+        color: var(--accent);
+      }
+
+      .subtitle {
+        font-size: 0.9rem;
+        color: #a5b4fc;
+        margin-top: 4px;
+      }
+
+      .canvas-wrap {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        padding: 16px 0 6px;
+      }
+
+      canvas {
+        background: #050816;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+      }
+
+      .overlay-content {
+        padding: 16px 26px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 1.4rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      }
+
+      .overlay.win .overlay-content {
+        background: linear-gradient(135deg, #2e7d32, var(--win));
+      }
+
+      .overlay.lose .overlay-content {
+        background: linear-gradient(135deg, #c62828, var(--lose));
+      }
+
+      .controls {
+        margin-top: 18px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn {
+        border-radius: 14px;
+        padding: 8px 16px;
+        border: 1px solid var(--btn-border);
+        background: radial-gradient(circle at top, #172a45, var(--btn-bg));
+        color: var(--text);
+        font-size: 0.85rem;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.18s ease, transform 0.12s ease,
+          box-shadow 0.18s ease, border-color 0.18s ease;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      }
+
+      .btn:hover {
+        background: radial-gradient(circle at top, #233554, var(--btn-hover));
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.18);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.7);
+      }
+
+      .btn:active {
+        transform: translateY(1px) scale(0.99);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+      }
+
+      .btn.primary {
+        background: radial-gradient(circle at top, var(--accent), #b52b46);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .btn.primary:hover {
+        background: radial-gradient(circle at top, #ff4f75, var(--accent));
+      }
+
+      .stats {
+        margin-top: 16px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-align: center;
+        padding: 6px 10px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+      }
+
+      .stats span.label {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.72rem;
+        color: #6a7285;
+        margin-right: 4px;
+      }
+
+      .stats span.value {
+        color: #f5f5f5;
+        margin-right: 12px;
+      }
+
+      @media (max-width: 768px) {
+        .shell {
+          padding: 18px 10px 24px;
+        }
+        .card {
+          padding: 16px 12px 18px;
+        }
+        canvas {
+          transform: scale(0.9);
+          transform-origin: top center;
+        }
+        .stats {
+          font-size: 0.78rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="card">
+        <div class="header">
+          <div>
+            <div class="title">
+              <span>MazeMind</span><span class="accent">AI</span>
+            </div>
+            <div class="subtitle">
+              Escape the maze before the AI catches you
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-wrap" style="margin-top: 10px">
+          <canvas id="game" width="600" height="600"></canvas>
+          <div id="overlay" class="overlay">
+            <div class="overlay-content">GAME OVER</div>
+          </div>
+          <div id="spinner" class="overlay" style="pointer-events: none">
+            <div
+              style="
+                width: 52px;
+                height: 52px;
+                border-radius: 999px;
+                border: 4px solid rgba(255, 255, 255, 0.18);
+                border-top-color: #e94560;
+                animation: spin 0.8s linear infinite;
+                box-shadow: 0 0 18px rgba(233, 69, 96, 0.5);
+              "
+            ></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.22); font-size: 0.78rem; color: var(--muted);">
+          <div style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.7rem; margin-bottom: 4px; color: #cbd5f5;">
+            How to Play
+          </div>
+          <div>• Use the arrow keys to move</div>
+          <div>• Reach the glowing green exit to escape</div>
+          <div>• Avoid the red hunter that chases you</div>
+          <div>• Use route buttons to reveal helpful paths</div>
+        </div>
+
+        <div class="controls">
+          <button id="btnNew" class="btn primary">New Puzzle</button>
+          <button id="btnDijkstra" class="btn">Show Safe Route</button>
+          <button id="btnAStar" class="btn">Show Smart Route</button>
+          <button id="btnClear" class="btn">Hide Route</button>
+        </div>
+
+        <div id="stats" class="stats">
+          <span class="label">Steps Needed:</span>
+          <span id="statLength" class="value">-</span>
+          <span class="label">Area Explored:</span>
+          <span id="statVisited" class="value">-</span>
+          <span class="label">Route Type:</span>
+          <span id="statAlgo" class="value">-</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = "http://localhost:8080";
+
+      let CELL_SIZE = window.innerWidth < 700 ? 20 : 30;
+      const GRID_W = 20;
+      const GRID_H = 20;
+      const PLAYER_COLOR = "#3b82f6";
+      const ENEMY_COLOR = "#ef4444";
+      const EXIT_COLOR = "#22c55e";
+      const WALL_COLOR = "#000000";
+      const VISITED_DIJKSTRA = "rgba(59,130,246,0.22)";
+      const PATH_DIJKSTRA = "rgba(253,224,71,0.9)";
+      const VISITED_ASTAR = "rgba(52,211,153,0.22)";
+      const PATH_ASTAR = "rgba(248,171,72,0.92)";
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const overlayEl = document.getElementById("overlay");
+      const overlayText = overlayEl.querySelector(".overlay-content");
+      const spinnerEl = document.getElementById("spinner");
+      const btnNew = document.getElementById("btnNew");
+      const btnDijkstra = document.getElementById("btnDijkstra");
+      const btnAStar = document.getElementById("btnAStar");
+      const btnClear = document.getElementById("btnClear");
+      const statLength = document.getElementById("statLength");
+      const statVisited = document.getElementById("statVisited");
+      const statAlgo = document.getElementById("statAlgo");
+
+      let grid = null;
+      let player = { x: 0, y: 0 };
+      let enemy = { x: GRID_W - 1, y: GRID_H - 1 };
+      let exitCell = { x: 0, y: GRID_H - 1 }; // exit in bottom-left corner
+      let animatingPath = false;
+      let gameOver = false;
+      let youWin = false;
+      let loadingCount = 0;
+
+      function resetStats() {
+        statLength.textContent = "-";
+        statVisited.textContent = "-";
+        statAlgo.textContent = "-";
+      }
+
+      function setOverlay(type, text) {
+        if (!type) {
+          overlayEl.style.display = "none";
+          overlayEl.classList.remove("win", "lose");
+          return;
+        }
+        overlayEl.style.display = "flex";
+        overlayEl.classList.remove("win", "lose");
+        overlayEl.classList.add(type === "win" ? "win" : "lose");
+        overlayText.textContent = text;
+      }
+
+      function setLoading(on) {
+        if (on) {
+          loadingCount++;
+        } else {
+          loadingCount = Math.max(0, loadingCount - 1);
+        }
+        spinnerEl.style.display = loadingCount > 0 ? "flex" : "none";
+      }
+
+      async function apiPost(path, body) {
+        setLoading(true);
+        try {
+          const res = await fetch(API + path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            throw new Error("HTTP " + res.status + ": " + text);
+          }
+          return res.json();
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function drawMaze() {
+        if (!grid) return;
+        clearCanvas();
+
+        ctx.strokeStyle = WALL_COLOR;
+        ctx.lineWidth = 2;
+
+        for (let y = 0; y < GRID_H; y++) {
+          for (let x = 0; x < GRID_W; x++) {
+            const cell = grid[y][x];
+            const px = x * CELL_SIZE;
+            const py = y * CELL_SIZE;
+
+            ctx.beginPath();
+            if (cell.walls[0]) {
+              ctx.moveTo(px, py);
+              ctx.lineTo(px + CELL_SIZE, py);
+            }
+            if (cell.walls[1]) {
+              ctx.moveTo(px + CELL_SIZE, py);
+              ctx.lineTo(px + CELL_SIZE, py + CELL_SIZE);
+            }
+            if (cell.walls[2]) {
+              ctx.moveTo(px, py + CELL_SIZE);
+              ctx.lineTo(px + CELL_SIZE, py + CELL_SIZE);
+            }
+            if (cell.walls[3]) {
+              ctx.moveTo(px, py);
+              ctx.lineTo(px, py + CELL_SIZE);
+            }
+            ctx.stroke();
+          }
+        }
+
+        drawExit();
+        drawPlayer();
+        drawEnemy();
+      }
+
+      function drawPlayer() {
+        const cx = player.x * CELL_SIZE + CELL_SIZE / 2;
+        const cy = player.y * CELL_SIZE + CELL_SIZE / 2;
+        const r = CELL_SIZE * 0.3;
+        ctx.save();
+        ctx.fillStyle = PLAYER_COLOR;
+        ctx.shadowColor = "rgba(59,130,246,0.9)";
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawEnemy() {
+        const cx = enemy.x * CELL_SIZE + CELL_SIZE / 2;
+        const cy = enemy.y * CELL_SIZE + CELL_SIZE / 2;
+        const r = CELL_SIZE * 0.3;
+        ctx.save();
+        ctx.fillStyle = ENEMY_COLOR;
+        ctx.shadowColor = "rgba(239,68,68,0.9)";
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawExit() {
+        const px = exitCell.x * CELL_SIZE + 5;
+        const py = exitCell.y * CELL_SIZE + 5;
+        const size = CELL_SIZE - 10;
+        ctx.fillStyle = EXIT_COLOR;
+        ctx.fillRect(px, py, size, size);
+      }
+
+      function canMove(x, y, dx, dy) {
+        if (!grid) return false;
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || nx >= GRID_W || ny < 0 || ny >= GRID_H) return false;
+
+        const cell = grid[y][x];
+        if (dx === 0 && dy === -1 && cell.walls[0]) return false;
+        if (dx === 1 && dy === 0 && cell.walls[1]) return false;
+        if (dx === 0 && dy === 1 && cell.walls[2]) return false;
+        if (dx === -1 && dy === 0 && cell.walls[3]) return false;
+        return true;
+      }
+
+      function handleKey(e) {
+        if (animatingPath || gameOver || youWin) return;
+        let dx = 0,
+          dy = 0;
+        if (e.key === "ArrowUp") dy = -1;
+        else if (e.key === "ArrowDown") dy = 1;
+        else if (e.key === "ArrowLeft") dx = -1;
+        else if (e.key === "ArrowRight") dx = 1;
+        else return;
+
+        e.preventDefault();
+        if (!canMove(player.x, player.y, dx, dy)) return;
+
+        player.x += dx;
+        player.y += dy;
+        checkWinOrLose();
+        drawMaze();
+        moveEnemyAfterPlayer();
+      }
+
+      async function moveEnemyAfterPlayer() {
+        if (!grid || gameOver || youWin) return;
+        try {
+          const body = {
+            grid,
+            width: GRID_W,
+            height: GRID_H,
+            enemy: { x: enemy.x, y: enemy.y },
+            player: { x: player.x, y: player.y },
+          };
+          const res = await apiPost("/api/enemy-move", body);
+          if (res.enemy_next) {
+            enemy.x = res.enemy_next.x;
+            enemy.y = res.enemy_next.y;
+          }
+          checkWinOrLose();
+          drawMaze();
+        } catch (err) {
+          console.error("Enemy move failed:", err);
+        }
+      }
+
+      function checkWinOrLose() {
+        if (player.x === enemy.x && player.y === enemy.y) {
+          gameOver = true;
+          setOverlay("lose", "GAME OVER");
+        } else if (player.x === exitCell.x && player.y === exitCell.y) {
+          youWin = true;
+          setOverlay("win", "YOU WIN");
+        } else {
+          setOverlay(null);
+        }
+      }
+
+      function resizeCanvas() {
+        CELL_SIZE = window.innerWidth < 700 ? 20 : 30;
+        canvas.width = GRID_W * CELL_SIZE;
+        canvas.height = GRID_H * CELL_SIZE;
+      }
+
+      async function generateMaze() {
+        try {
+          animatingPath = false;
+          gameOver = false;
+          youWin = false;
+          setOverlay(null);
+          resetStats();
+
+          const res = await apiPost("/api/generate-maze", {
+            width: GRID_W,
+            height: GRID_H,
+          });
+          grid = res.grid;
+
+          // Player at top-left, enemy at bottom-right, exit at bottom-left (visible)
+          player = { x: 0, y: 0 };
+          enemy = { x: GRID_W - 1, y: GRID_H - 1 };
+          exitCell = { x: 0, y: GRID_H - 1 };
+
+          drawMaze();
+        } catch (err) {
+          console.error("Failed to generate maze:", err);
+        }
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function showPath(algorithm) {
+        if (!grid || animatingPath) return;
+        animatingPath = true;
+        resetStats();
+        statAlgo.textContent = algorithm === "dijkstra" ? "Safe Route" : "Smart Route";
+
+        try {
+          const res = await apiPost("/api/pathfind", {
+            grid,
+            width: GRID_W,
+            height: GRID_H,
+            start: { x: player.x, y: player.y },
+            end: { x: exitCell.x, y: exitCell.y },
+            algorithm,
+          });
+
+          const visited = res.visited_order || [];
+          const path = res.path || [];
+          statLength.textContent = path.length;
+          statVisited.textContent = visited.length;
+
+          const visitedColor =
+            algorithm === "dijkstra" ? VISITED_DIJKSTRA : VISITED_ASTAR;
+          const pathColor =
+            algorithm === "dijkstra" ? PATH_DIJKSTRA : PATH_ASTAR;
+
+          drawMaze();
+
+          for (let i = 0; i < visited.length; i++) {
+            const { x, y } = visited[i];
+            const px = x * CELL_SIZE + 2;
+            const py = y * CELL_SIZE + 2;
+            const size = CELL_SIZE - 4;
+            ctx.fillStyle = visitedColor;
+            ctx.fillRect(px, py, size, size);
+            drawExit();
+            drawPlayer();
+            drawEnemy();
+            await sleep(20);
+          }
+
+          ctx.fillStyle = pathColor;
+          for (let i = 0; i < path.length; i++) {
+            const { x, y } = path[i];
+            const px = x * CELL_SIZE + 6;
+            const py = y * CELL_SIZE + 6;
+            const size = CELL_SIZE - 12;
+            ctx.fillRect(px, py, size, size);
+          }
+
+          drawExit();
+          drawPlayer();
+          drawEnemy();
+        } catch (err) {
+          console.error("Pathfind failed:", err);
+        } finally {
+          animatingPath = false;
+        }
+      }
+
+      function clearPathOverlay() {
+        if (!grid) return;
+        animatingPath = false;
+        resetStats();
+        drawMaze();
+      }
+
+      window.addEventListener("keydown", handleKey, { passive: false });
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        drawMaze();
+      });
+      btnNew.addEventListener("click", generateMaze);
+      btnDijkstra.addEventListener("click", () => showPath("dijkstra"));
+      btnAStar.addEventListener("click", () => showPath("astar"));
+      btnClear.addEventListener("click", clearPathOverlay);
+
+      resizeCanvas();
+      generateMaze();
+    </script>
+  </body>
+</html>
+
